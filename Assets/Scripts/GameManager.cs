@@ -16,6 +16,7 @@ public class GameManager : MonoBehaviour
     public Card blank;
     public Canvas canvas;
     public Transform player_hand_spawnpoint;
+    public Transform ai_hand_spawnpoint;
     public Vector3 offset;
 
 
@@ -39,6 +40,8 @@ public class GameManager : MonoBehaviour
     {
         canvas = FindAnyObjectByType<Canvas>();
         Deal();
+
+        ai_hand_spawnpoint.position = player_hand_spawnpoint.position + new Vector3(0,600, 0);
     }
 
     // Update is called once per frame
@@ -61,9 +64,14 @@ public class GameManager : MonoBehaviour
             player_hand.Add(current_card.data);
             current_card.transform.SetParent(canvas.transform);
         }
-        for (int i = 0; i < ai_deck.Count; i++)
+        for (int i = 0; i < 2; i++)
         {
-            ai_hand.Add(ai_deck[i]);
+            Card current_card = Instantiate(blank, ai_hand_spawnpoint.position + offset, Quaternion.identity, canvas.transform);
+            offset.x += 300;
+            current_card.data = ai_deck[i];
+            
+            ai_hand.Add(current_card.data);
+            current_card.transform.SetParent(canvas.transform);
         }
     }
 
