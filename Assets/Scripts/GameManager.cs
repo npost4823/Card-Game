@@ -1,6 +1,5 @@
-using System.Collections;
+
 using System.Collections.Generic;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -15,9 +14,10 @@ public class GameManager : MonoBehaviour
 
     public Card blank;
     public Canvas canvas;
-    public Transform player_hand_spawnpoint;
-    public Transform ai_hand_spawnpoint;
+    public Vector3 player_hand_spawnpoint;
+    private Vector3 ai_hand_spawnpoint;
     public Vector3 offset;
+    public Vector3 ai_offset;
 
 
 
@@ -38,10 +38,11 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        ai_hand_spawnpoint = player_hand_spawnpoint + new Vector3(0,350, 0);
         canvas = FindAnyObjectByType<Canvas>();
         Deal();
 
-        ai_hand_spawnpoint.position = player_hand_spawnpoint.position + new Vector3(0,600, 0);
+        
     }
 
     // Update is called once per frame
@@ -57,7 +58,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < 2; i++)
         {
             //player_hand.Add(player_deck[i]);
-            Card current_card = Instantiate(blank, player_hand_spawnpoint.position + offset, Quaternion.identity, canvas.transform);
+            Card current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
             offset.x += 300;
             current_card.data = player_deck[i];
             //player_deck.Remove(current_card.data);
@@ -66,8 +67,8 @@ public class GameManager : MonoBehaviour
         }
         for (int i = 0; i < 2; i++)
         {
-            Card current_card = Instantiate(blank, ai_hand_spawnpoint.position + offset, Quaternion.identity, canvas.transform);
-            offset.x += 300;
+            Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
+            ai_offset.x += 300;
             current_card.data = ai_deck[i];
             
             ai_hand.Add(current_card.data);

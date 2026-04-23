@@ -261,8 +261,8 @@ MonoBehaviour:
   blank: {fileID: 4608709814338197990, guid: 99ef4bccd68e84d9ba6e7c8051daf70b, type: 3}
   canvas: {fileID: 4392464444410497821}
   player_hand_spawnpoint: {fileID: 1267705312}
-  ai_hand_spawnpoint: {fileID: 1267705312}
-  offset: {x: 300, y: 0, z: 0}
+  ai_hand_spawnpoint: {fileID: 880957148}
+  offset: {x: 0, y: 0, z: 0}
 --- !u!4 &622756966
 Transform:
   m_ObjectHideFlags: 0
