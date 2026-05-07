@@ -18,7 +18,7 @@ public class GameManager : MonoBehaviour
     private Vector3 ai_hand_spawnpoint;
     public Vector3 offset;
     public Vector3 ai_offset;
-
+    public Vector3 y_offset;
 
 
     
@@ -38,8 +38,9 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        ai_hand_spawnpoint = player_hand_spawnpoint + new Vector3(0,350, 0);
+        ai_hand_spawnpoint = player_hand_spawnpoint + new Vector3(0,300, 0); //Makes ai hand spawn point above the player hand spawn point
         canvas = FindAnyObjectByType<Canvas>();
+        player_hand_spawnpoint += new Vector3(0, 10, 0); //Makes player hand spawn point slightly above the bottom of the screen
         Deal();
 
         
