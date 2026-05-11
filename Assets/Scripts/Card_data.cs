@@ -12,4 +12,5 @@ public class Card_data : ScriptableObject
     public int damage;
     public Sprite sprite;
 
+
 }

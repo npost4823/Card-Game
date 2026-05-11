@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEditor;
+using UnityEngine.EventSystems;
 
-public class Card : MonoBehaviour
+public class Card : MonoBehaviour, IPointerClickHandler
 {
     public Card_data data;
 
@@ -20,9 +22,8 @@ public class Card : MonoBehaviour
     public TextMeshProUGUI costText;
     public TextMeshProUGUI damageText;
     public Image spriteImage;
-        
+    public bool is_being_played = false;
 
-    // Start is called before the first frame update
     void Start()
     {
         card_name = data.card_name;
@@ -37,12 +38,17 @@ public class Card : MonoBehaviour
         costText.text = cost.ToString();
         damageText.text = damage.ToString();
         spriteImage.sprite = sprite;
-
     }
 
-    // Update is called once per frame
-    void Update()
+    public void OnPointerClick(PointerEventData eventData)
     {
-        
+        Card[] allCards = FindObjectsByType<Card>(FindObjectsSortMode.None);
+        foreach (Card card in allCards)
+        {
+            card.is_being_played = false;
+        }
+
+        is_being_played = true;
+        Debug.Log($"{card_name} is being played!");
     }
 }

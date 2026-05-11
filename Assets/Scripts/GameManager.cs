@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     public List<Card_data> player_hand = new List<Card_data>();
     public List<Card_data> ai_hand = new List<Card_data>();
     public List<Card_data> discard_pile = new List<Card_data>();
+    public List<Card_data> playing_field = new List<Card_data>();
 
     public Card blank;
     public Canvas canvas;
@@ -38,7 +39,7 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        ai_hand_spawnpoint = player_hand_spawnpoint + new Vector3(0,300, 0); //Makes ai hand spawn point above the player hand spawn point
+        ai_hand_spawnpoint = player_hand_spawnpoint + new Vector3(0,600, 0); //Makes ai hand spawn point above the player hand spawn point
         canvas = FindAnyObjectByType<Canvas>();
         player_hand_spawnpoint += new Vector3(0, 10, 0); //Makes player hand spawn point slightly above the bottom of the screen
         Deal();
