@@ -50,5 +50,8 @@ public class Card : MonoBehaviour, IPointerClickHandler
 
         is_being_played = true;
         Debug.Log($"{card_name} is being played!");
-    }
+
+        // Notify the GameManager
+        GameManager.gm.PlayCard(this);
+}
 }

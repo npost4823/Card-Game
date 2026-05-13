@@ -1,4 +1,3 @@
-
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,14 +14,13 @@ public class GameManager : MonoBehaviour
 
     public Card blank;
     public Canvas canvas;
+    public Transform playingFieldPlayerSpawnpoint; // Drag the empty GameObject here in the Inspector
+    public Vector3 playingFieldOffset;             // Set X: 300 in the Inspector to space cards out
     public Vector3 player_hand_spawnpoint;
     private Vector3 ai_hand_spawnpoint;
     public Vector3 offset;
     public Vector3 ai_offset;
     public Vector3 y_offset;
-
-
-    
 
     private void Awake()
     {
@@ -36,18 +34,15 @@ public class GameManager : MonoBehaviour
             DontDestroyOnLoad(this.gameObject);
         }
     }
-    // Start is called before the first frame update
+
     void Start()
     {
-        ai_hand_spawnpoint = player_hand_spawnpoint + new Vector3(0,600, 0); //Makes ai hand spawn point above the player hand spawn point
+        ai_hand_spawnpoint = player_hand_spawnpoint + new Vector3(0, 550, 0);
         canvas = FindAnyObjectByType<Canvas>();
-        player_hand_spawnpoint += new Vector3(0, 10, 0); //Makes player hand spawn point slightly above the bottom of the screen
+        player_hand_spawnpoint += new Vector3(0, 10, 0);
         Deal();
-
-        
     }
 
-    // Update is called once per frame
     void Update()
     {
         
@@ -59,11 +54,9 @@ public class GameManager : MonoBehaviour
         Shuffle(ai_deck);
         for (int i = 0; i < 2; i++)
         {
-            //player_hand.Add(player_deck[i]);
             Card current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
             offset.x += 300;
             current_card.data = player_deck[i];
-            //player_deck.Remove(current_card.data);
             player_hand.Add(current_card.data);
             current_card.transform.SetParent(canvas.transform);
         }
@@ -72,13 +65,12 @@ public class GameManager : MonoBehaviour
             Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
             ai_offset.x += 300;
             current_card.data = ai_deck[i];
-            
             ai_hand.Add(current_card.data);
             current_card.transform.SetParent(canvas.transform);
         }
     }
 
-    void Shuffle(List<Card_data> _deck )
+    void Shuffle(List<Card_data> _deck)
     {
         System.Random rng = new System.Random();
         for (int i = 0; i < _deck.Count; i++)
@@ -88,7 +80,6 @@ public class GameManager : MonoBehaviour
             _deck[i] = _deck[j];
             _deck[j] = temp;
         }
-        
     }
 
     void AI_Turn()
@@ -96,7 +87,20 @@ public class GameManager : MonoBehaviour
 
     }
 
+    public void PlayCard(Card card)
+    {
+        if (!playing_field.Contains(card.data))
+        {
+            playing_field.Add(card.data);
+            player_hand.Remove(card.data);
 
+            // Space each card out based on how many are already on the field
+            int cardIndex = playing_field.Count - 1;
+            card.transform.SetParent(canvas.transform);
+            card.transform.position = playingFieldPlayerSpawnpoint.position 
+                                      + (playingFieldOffset * cardIndex);
 
-    
+            Debug.Log($"{card.card_name} added to the playing field!");
+        }
+    }
 }
