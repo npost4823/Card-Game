@@ -21,6 +21,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI playerHealthDisplay;
     public TextMeshProUGUI aiHealthDisplay;
     public TextMeshProUGUI goldDisplay;
+    public TextMeshProUGUI eventNotificationDisplay;
     public Transform playingFieldPlayerSpawnpoint; // Drag the empty GameObject here in the Inspector
     public Transform playingFieldAISpawnpoint;     // Drag the empty GameObject here in the Inspector
     public Vector3 playingFieldOffset;             // Set X: 300 in the Inspector to space cards out
@@ -88,6 +89,47 @@ public class GameManager : MonoBehaviour
         
     }
 
+    void ShowEventNotification(string message)
+    {
+        if (eventNotificationDisplay != null)
+        {
+            eventNotificationDisplay.text = message;
+            eventNotificationDisplay.gameObject.SetActive(true);
+            CancelInvoke("HideEventNotification");
+            Invoke("HideEventNotification", 3f);
+        }
+    }
+
+    void HideEventNotification()
+    {
+        if (eventNotificationDisplay != null)
+        {
+            eventNotificationDisplay.gameObject.SetActive(false);
+        }
+    }
+
+    void GameOver(string winnerMessage)
+    {
+        ShowEventNotification(winnerMessage);
+        Debug.Log(winnerMessage);
+        
+        // Disable all card interaction
+        Card[] allCards = FindObjectsByType<Card>();
+        foreach (Card card in allCards)
+        {
+            card.enabled = false;
+        }
+        
+        // Update turn display
+        if (turnDisplay != null)
+        {
+            turnDisplay.text = "GAME OVER";
+        }
+        
+        // You can add additional logic here like showing a game over screen,
+        // resetting the game, or navigating to a menu
+    }
+
     void Deal()
     {
         Shuffle(player_deck);
@@ -121,6 +163,15 @@ public class GameManager : MonoBehaviour
             _deck[i] = _deck[j];
             _deck[j] = temp;
         }
+    }
+
+    Card_data GetRandomCardFromDeck(List<Card_data> deck)
+    {
+        if (deck.Count == 0)
+            return null;
+        
+        int randomIndex = Random.Range(0, deck.Count);
+        return deck[randomIndex];
     }
 
     void AI_Turn()
@@ -221,6 +272,18 @@ public class GameManager : MonoBehaviour
                 aiHealthDisplay.text = $"AI Health: {aiHealth}";
             }
             
+            // Check if game is over
+            if (playerHealth <= 0)
+            {
+                GameOver("AI WINS THE GAME!");
+                return;
+            }
+            else if (aiHealth <= 0)
+            {
+                GameOver("PLAYER WINS THE GAME!");
+                return;
+            }
+            
             // Remove cards from the playing field lists
             playing_field.Clear();
             Playing_field_ai.Clear();
@@ -254,6 +317,7 @@ public class GameManager : MonoBehaviour
                 {
                     goldDisplay.text = $"Gold: {playerGold}";
                 }
+                ShowEventNotification("Gold Payout! +3 Gold");
                 Debug.Log($"Gold payout! Player gained 3 gold. (Turn {turnCounter})");
             }
             
@@ -278,8 +342,7 @@ public class GameManager : MonoBehaviour
             {
                 Card current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
                 offset.x += 300;
-                current_card.data = player_deck[0];
-                player_deck.RemoveAt(0);
+                current_card.data = GetRandomCardFromDeck(player_deck);
                 player_hand.Add(current_card.data);
                 current_card.transform.SetParent(canvas.transform);
             }
@@ -291,8 +354,7 @@ public class GameManager : MonoBehaviour
             {
                 Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
                 ai_offset.x += 300;
-                current_card.data = ai_deck[0];
-                ai_deck.RemoveAt(0);
+                current_card.data = GetRandomCardFromDeck(ai_deck);
                 current_card.ai_card = true;
                 ai_hand.Add(current_card.data);
                 current_card.transform.SetParent(canvas.transform);
@@ -306,6 +368,7 @@ public class GameManager : MonoBehaviour
             goldDisplay.text = $"Gold: {playerGold}";
         }
         
+        ShowEventNotification("Hand Empty! Refilled Hand +5 Gold");
         Debug.Log("Hands refilled! Player gained 5 gold cashout.");
     }
     
@@ -321,8 +384,7 @@ public class GameManager : MonoBehaviour
             {
                 Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
                 ai_offset.x += 300;
-                current_card.data = ai_deck[0];
-                ai_deck.RemoveAt(0);
+                current_card.data = GetRandomCardFromDeck(ai_deck);
                 current_card.ai_card = true;
                 ai_hand.Add(current_card.data);
                 current_card.transform.SetParent(canvas.transform);
@@ -337,6 +399,7 @@ public class GameManager : MonoBehaviour
         // Check if player has enough gold
         if (playerGold < 2)
         {
+            ShowEventNotification("Not enough gold! Need 2 gold");
             Debug.Log("Not enough gold to draw a new hand! Need 2 gold.");
             return;
         }
@@ -364,8 +427,7 @@ public class GameManager : MonoBehaviour
             {
                 Card current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
                 offset.x += 300;
-                current_card.data = player_deck[0];
-                player_deck.RemoveAt(0);
+                current_card.data = GetRandomCardFromDeck(player_deck);
                 player_hand.Add(current_card.data);
                 current_card.transform.SetParent(canvas.transform);
             }
@@ -378,6 +440,7 @@ public class GameManager : MonoBehaviour
             goldDisplay.text = $"Gold: {playerGold}";
         }
         
+        ShowEventNotification("New Hand Drawn! -2 Gold");
         Debug.Log("Player drew 2 new cards for 2 gold.");
     }
 
@@ -388,6 +451,7 @@ public class GameManager : MonoBehaviour
             // Check if player has enough gold
             if (playerGold < card.cost)
             {
+                ShowEventNotification($"Not enough gold! Need {card.cost}, have {playerGold}");
                 Debug.Log($"Not enough gold to play {card.card_name}! Need {card.cost} gold, but only have {playerGold}.");
                 return;
             }
@@ -413,6 +477,7 @@ public class GameManager : MonoBehaviour
                 {
                     turnDisplay.text = "Turn: AI";
                 }
+                ShowEventNotification($"{card.card_name} Played! -{card.cost} Gold");
                 Debug.Log($"{card.card_name} added to the playing field!");
                 
                 // Call AI turn after 2 seconds
