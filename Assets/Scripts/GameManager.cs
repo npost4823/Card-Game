@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI aiHealthDisplay;
     public TextMeshProUGUI goldDisplay;
     public TextMeshProUGUI eventNotificationDisplay;
+    public TextMeshProUGUI payoutCountdownDisplay;
     public Transform playingFieldPlayerSpawnpoint; // Drag the empty GameObject here in the Inspector
     public Transform playingFieldAISpawnpoint;     // Drag the empty GameObject here in the Inspector
     public Vector3 playingFieldOffset;             // Set X: 300 in the Inspector to space cards out
@@ -36,6 +37,7 @@ public class GameManager : MonoBehaviour
     private int aiHealth = 5;
     private int playerGold = 6;
     private int turnCounter = 0;
+    private bool isGameOver = false;
 
     private void Awake()
     {
@@ -81,6 +83,7 @@ public class GameManager : MonoBehaviour
             goldDisplay.text = $"Gold: {playerGold}";
         }
         
+        UpdatePayoutCountdown();
         Deal();
     }
 
@@ -91,12 +94,26 @@ public class GameManager : MonoBehaviour
 
     void ShowEventNotification(string message)
     {
-        if (eventNotificationDisplay != null)
+        if (eventNotificationDisplay != null && !isGameOver)
         {
             eventNotificationDisplay.text = message;
             eventNotificationDisplay.gameObject.SetActive(true);
             CancelInvoke("HideEventNotification");
             Invoke("HideEventNotification", 3f);
+        }
+    }
+
+    void ShowEventNotification(string message, bool permanent)
+    {
+        if (eventNotificationDisplay != null)
+        {
+            eventNotificationDisplay.text = message;
+            eventNotificationDisplay.gameObject.SetActive(true);
+            CancelInvoke("HideEventNotification");
+            if (!permanent)
+            {
+                Invoke("HideEventNotification", 3f);
+            }
         }
     }
 
@@ -108,9 +125,23 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void UpdatePayoutCountdown()
+    {
+        if (payoutCountdownDisplay != null)
+        {
+            int turnsUntilPayout = 2 - (turnCounter % 2);
+            if (turnsUntilPayout == 0)
+            {
+                turnsUntilPayout = 2;
+            }
+            payoutCountdownDisplay.text = $"Payout in: {turnsUntilPayout} turn{(turnsUntilPayout != 1 ? "s" : "")}";
+        }
+    }
+
     void GameOver(string winnerMessage)
     {
-        ShowEventNotification(winnerMessage);
+        isGameOver = true;
+        ShowEventNotification(winnerMessage, true);
         Debug.Log(winnerMessage);
         
         // Disable all card interaction
@@ -172,6 +203,26 @@ public class GameManager : MonoBehaviour
         
         int randomIndex = Random.Range(0, deck.Count);
         return deck[randomIndex];
+    }
+
+    bool PlayerCanMakeAMove()
+    {
+        // Check if player can afford any card in their hand
+        foreach (Card_data card in player_hand)
+        {
+            if (playerGold >= card.cost)
+            {
+                return true;
+            }
+        }
+        
+        // Check if player can afford to draw a new hand
+        if (playerGold >= 2)
+        {
+            return true;
+        }
+        
+        return false;
     }
 
     void AI_Turn()
@@ -309,6 +360,9 @@ public class GameManager : MonoBehaviour
             // Increment turn counter
             turnCounter++;
             
+            // Update the payout countdown display
+            UpdatePayoutCountdown();
+            
             // Give player 3 gold every 2 turns
             if (turnCounter % 2 == 0)
             {
@@ -319,12 +373,20 @@ public class GameManager : MonoBehaviour
                 }
                 ShowEventNotification("Gold Payout! +3 Gold");
                 Debug.Log($"Gold payout! Player gained 3 gold. (Turn {turnCounter})");
+                UpdatePayoutCountdown();
             }
             
             // Check if both hands are empty
             if (player_hand.Count == 0 && ai_hand.Count == 0)
             {
                 RefillHands();
+                
+                // Check if player is out of moves
+                if (!PlayerCanMakeAMove())
+                {
+                    GameOver("AI WINS! Player out of gold!");
+                    return;
+                }
             }
         }
     }
@@ -442,6 +504,12 @@ public class GameManager : MonoBehaviour
         
         ShowEventNotification("New Hand Drawn! -2 Gold");
         Debug.Log("Player drew 2 new cards for 2 gold.");
+        
+        // Check if player is out of moves
+        if (!PlayerCanMakeAMove())
+        {
+            GameOver("AI WINS! Player out of gold!");
+        }
     }
 
     public void PlayCard(Card card)
