@@ -165,14 +165,50 @@ public class GameManager : MonoBehaviour
     {
         Shuffle(player_deck);
         Shuffle(ai_deck);
-        for (int i = 0; i < 2; i++)
+        
+        // Find paladin and stick figure cards for the player's first hand
+        Card_data paladin = null;
+        Card_data stickFigure = null;
+        
+        foreach (Card_data card in player_deck)
         {
+            if (card.card_name.ToLower() == "paladin")
+                paladin = card;
+            if (card.card_name.ToLower() == "stick figure")
+                stickFigure = card;
+        }
+        
+        // If we found both cards, use them for the first hand
+        if (paladin != null && stickFigure != null)
+        {
+            // Add Paladin
             Card current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
             offset.x += 300;
-            current_card.data = player_deck[i];
+            current_card.data = paladin;
+            player_hand.Add(current_card.data);
+            current_card.transform.SetParent(canvas.transform);
+            
+            // Add Stick Figure
+            current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
+            offset.x += 300;
+            current_card.data = stickFigure;
             player_hand.Add(current_card.data);
             current_card.transform.SetParent(canvas.transform);
         }
+        else
+        {
+            // Fallback to normal dealing if cards not found
+            for (int i = 0; i < 2; i++)
+            {
+                Card current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
+                offset.x += 300;
+                current_card.data = player_deck[i];
+                player_hand.Add(current_card.data);
+                current_card.transform.SetParent(canvas.transform);
+            }
+        }
+        
+        // Deal AI cards normally
         for (int i = 0; i < 2; i++)
         {
             Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
@@ -239,6 +275,8 @@ public class GameManager : MonoBehaviour
             }
         }
         
+        Debug.Log($"AI found {aiCardsInHand.Count} cards in hand. AI hand list has {ai_hand.Count} cards.");
+        
         // If there are AI cards to play
         if (aiCardsInHand.Count > 0)
         {
@@ -275,12 +313,38 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("AI has no cards to play!");
+            Debug.Log($"AI has no cards to play! Cards in hand: {ai_hand.Count}, Cards found in scene: {aiCardsInHand.Count}");
+            
+            // Clean up orphaned cards from ai_hand list if they don't exist in scene
+            List<Card_data> cardsToRemove = new List<Card_data>();
+            foreach (Card_data cardData in ai_hand)
+            {
+                bool foundInScene = false;
+                foreach (Card card in allCards)
+                {
+                    if (card.ai_card && card.data == cardData)
+                    {
+                        foundInScene = true;
+                        break;
+                    }
+                }
+                if (!foundInScene)
+                {
+                    cardsToRemove.Add(cardData);
+                    Debug.Log($"Removing orphaned card {cardData.card_name} from ai_hand list");
+                }
+            }
+            foreach (Card_data cardData in cardsToRemove)
+            {
+                ai_hand.Remove(cardData);
+            }
             
             // Deal 2 new cards to AI if they run out
             if (ai_hand.Count == 0 && ai_deck.Count > 0)
             {
                 DealAICards();
+                // Recursively call AI_Turn again to play a card
+                Invoke("AI_Turn", 0.5f);
             }
         }
     }
@@ -472,11 +536,16 @@ public class GameManager : MonoBehaviour
             return;
         }
         
-        // Destroy all current cards in player's hand
+        // Destroy all current cards in scene and resync lists
         Card[] allCards = FindObjectsByType<Card>();
         foreach (Card card in allCards)
         {
             if (!card.ai_card && player_hand.Contains(card.data))
+            {
+                Destroy(card.gameObject);
+            }
+            // Also destroy orphaned AI cards to prevent desync
+            else if (card.ai_card && !ai_hand.Contains(card.data))
             {
                 Destroy(card.gameObject);
             }
@@ -487,6 +556,20 @@ public class GameManager : MonoBehaviour
         
         // Reset offsets for new card placement
         offset = Vector3.zero;
+        ai_offset = Vector3.zero;
+        
+        // Reposition remaining AI cards with correct offset
+        allCards = FindObjectsByType<Card>();
+        int aiCardIndex = 0;
+        foreach (Card card in allCards)
+        {
+            if (card.ai_card && ai_hand.Contains(card.data))
+            {
+                // Reposition AI card with correct offset
+                card.transform.position = ai_hand_spawnpoint + new Vector3(aiCardIndex * 300, 0, 0);
+                aiCardIndex++;
+            }
+        }
         
         // Deal 2 new cards to player
         for (int i = 0; i < 2; i++)
