@@ -432,6 +432,12 @@ public class GameManager : MonoBehaviour
         
         ShowEventNotification("Hand Empty! Refilled Hand +5 Gold");
         Debug.Log("Hands refilled! Player gained 5 gold cashout.");
+        
+        // Check if player is out of moves after refill and payout
+        if (!PlayerCanMakeAMove())
+        {
+            GameOver("AI WINS! Player out of gold!");
+        }
     }
     
     void DealAICards()
