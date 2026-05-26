@@ -218,6 +218,45 @@ public class GameManager : MonoBehaviour
             ai_hand.Add(current_card.data);
             current_card.transform.SetParent(canvas.transform);
         }
+        
+        // Check if AI hand cumulative strength is greater than 8, reroll if needed
+        RerollAIHandIfTooStrong();
+    }
+    
+    void RerollAIHandIfTooStrong()
+    {
+        while (GetAIHandCumulativeStrength() > 8)
+        {
+            // Destroy current AI hand cards from scene
+            Card[] allCards = FindObjectsByType<Card>();
+            foreach (Card card in allCards)
+            {
+                if (card.ai_card && ai_hand.Contains(card.data))
+                {
+                    Destroy(card.gameObject);
+                }
+            }
+            
+            // Clear the AI hand list
+            ai_hand.Clear();
+            
+            // Reset AI offset for new card placement
+            ai_offset = Vector3.zero;
+            
+            // Deal 2 new cards to AI
+            for (int i = 0; i < 2; i++)
+            {
+                if (ai_deck.Count > 0)
+                {
+                    Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
+                    ai_offset.x += 300;
+                    current_card.data = GetRandomCardFromDeck(ai_deck);
+                    current_card.ai_card = true;
+                    ai_hand.Add(current_card.data);
+                    current_card.transform.SetParent(canvas.transform);
+                }
+            }
+        }
     }
 
     void Shuffle(List<Card_data> _deck)
@@ -239,6 +278,16 @@ public class GameManager : MonoBehaviour
         
         int randomIndex = Random.Range(0, deck.Count);
         return deck[randomIndex];
+    }
+
+    int GetAIHandCumulativeStrength()
+    {
+        int totalStrength = 0;
+        foreach (Card_data card in ai_hand)
+        {
+            totalStrength += card.damage;
+        }
+        return totalStrength;
     }
 
     bool PlayerCanMakeAMove()
@@ -263,6 +312,12 @@ public class GameManager : MonoBehaviour
 
     void AI_Turn()
     {
+        // Check if AI hand is empty and deal new cards
+        if (ai_hand.Count == 0 && ai_deck.Count > 0)
+        {
+            DealAICards();
+        }
+        
         // Find all AI cards that are currently in hand
         Card[] allCards = FindObjectsByType<Card>();
         List<Card> aiCardsInHand = new List<Card>();
@@ -274,8 +329,6 @@ public class GameManager : MonoBehaviour
                 aiCardsInHand.Add(card);
             }
         }
-        
-        Debug.Log($"AI found {aiCardsInHand.Count} cards in hand. AI hand list has {ai_hand.Count} cards.");
         
         // If there are AI cards to play
         if (aiCardsInHand.Count > 0)
@@ -306,46 +359,10 @@ public class GameManager : MonoBehaviour
                     Invoke("ResolveRound", 2f);
                 }
             }
-            else
-            {
-                Debug.Log("AI playing field is full! Card cannot be played.");
-            }
         }
         else
         {
-            Debug.Log($"AI has no cards to play! Cards in hand: {ai_hand.Count}, Cards found in scene: {aiCardsInHand.Count}");
-            
-            // Clean up orphaned cards from ai_hand list if they don't exist in scene
-            List<Card_data> cardsToRemove = new List<Card_data>();
-            foreach (Card_data cardData in ai_hand)
-            {
-                bool foundInScene = false;
-                foreach (Card card in allCards)
-                {
-                    if (card.ai_card && card.data == cardData)
-                    {
-                        foundInScene = true;
-                        break;
-                    }
-                }
-                if (!foundInScene)
-                {
-                    cardsToRemove.Add(cardData);
-                    Debug.Log($"Removing orphaned card {cardData.card_name} from ai_hand list");
-                }
-            }
-            foreach (Card_data cardData in cardsToRemove)
-            {
-                ai_hand.Remove(cardData);
-            }
-            
-            // Deal 2 new cards to AI if they run out
-            if (ai_hand.Count == 0 && ai_deck.Count > 0)
-            {
-                DealAICards();
-                // Recursively call AI_Turn again to play a card
-                Invoke("AI_Turn", 0.5f);
-            }
+            Debug.Log($"AI has no cards to play!");
         }
     }
     
@@ -440,67 +457,60 @@ public class GameManager : MonoBehaviour
                 UpdatePayoutCountdown();
             }
             
-            // Check if both hands are empty
-            if (player_hand.Count == 0 && ai_hand.Count == 0)
+            // Check if player hand is empty and deal new cards
+            bool playerHandWasEmpty = player_hand.Count == 0;
+            if (playerHandWasEmpty && player_deck.Count > 0)
             {
-                RefillHands();
-                
-                // Check if player is out of moves
-                if (!PlayerCanMakeAMove())
+                DealPlayerCards();
+            }
+            
+            // Check if AI hand is empty and deal new cards
+            if (ai_hand.Count == 0 && ai_deck.Count > 0)
+            {
+                DealAICards();
+            }
+            
+            // Give player payout only if player's hand was empty
+            if (playerHandWasEmpty)
+            {
+                playerGold += 5;
+                if (goldDisplay != null)
                 {
-                    GameOver("AI WINS! Player out of gold!");
-                    return;
+                    goldDisplay.text = $"Gold: {playerGold}";
                 }
+                ShowEventNotification("Hand Empty! Refilled Hand +5 Gold");
+                Debug.Log("Player gained 5 gold cashout for running out of cards.");
+            }
+            
+            // Check if player is out of moves
+            if (!PlayerCanMakeAMove())
+            {
+                GameOver("AI WINS! Player out of gold!");
+                return;
             }
         }
     }
     
-    void RefillHands()
+    void DealPlayerCards()
     {
-        // Reset offsets for new card placement
+        // Reset player offset for new card placement
         offset = Vector3.zero;
-        ai_offset = Vector3.zero;
         
-        // Deal 2 new cards to each player
-        for (int i = 0; i < 2; i++)
+        // Deal 2 new cards to player if hand is empty
+        if (player_hand.Count == 0)
         {
-            if (player_deck.Count > 0)
+            for (int i = 0; i < 2; i++)
             {
-                Card current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
-                offset.x += 300;
-                current_card.data = GetRandomCardFromDeck(player_deck);
-                player_hand.Add(current_card.data);
-                current_card.transform.SetParent(canvas.transform);
+                if (player_deck.Count > 0)
+                {
+                    Card current_card = Instantiate(blank, player_hand_spawnpoint + offset, Quaternion.identity, canvas.transform);
+                    offset.x += 300;
+                    current_card.data = GetRandomCardFromDeck(player_deck);
+                    player_hand.Add(current_card.data);
+                    current_card.transform.SetParent(canvas.transform);
+                }
             }
-        }
-        
-        for (int i = 0; i < 2; i++)
-        {
-            if (ai_deck.Count > 0)
-            {
-                Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
-                ai_offset.x += 300;
-                current_card.data = GetRandomCardFromDeck(ai_deck);
-                current_card.ai_card = true;
-                ai_hand.Add(current_card.data);
-                current_card.transform.SetParent(canvas.transform);
-            }
-        }
-        
-        // Give player +5 gold cashout for running out of cards
-        playerGold += 5;
-        if (goldDisplay != null)
-        {
-            goldDisplay.text = $"Gold: {playerGold}";
-        }
-        
-        ShowEventNotification("Hand Empty! Refilled Hand +5 Gold");
-        Debug.Log("Hands refilled! Player gained 5 gold cashout.");
-        
-        // Check if player is out of moves after refill and payout
-        if (!PlayerCanMakeAMove())
-        {
-            GameOver("AI WINS! Player out of gold!");
+            Debug.Log("Player drew 2 new cards.");
         }
     }
     
@@ -509,21 +519,27 @@ public class GameManager : MonoBehaviour
         // Reset AI offset for new card placement
         ai_offset = Vector3.zero;
         
-        // Deal 2 new cards to AI
-        for (int i = 0; i < 2; i++)
+        // Deal 2 new cards to AI if hand is empty
+        if (ai_hand.Count == 0)
         {
-            if (ai_deck.Count > 0)
+            for (int i = 0; i < 2; i++)
             {
-                Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
-                ai_offset.x += 300;
-                current_card.data = GetRandomCardFromDeck(ai_deck);
-                current_card.ai_card = true;
-                ai_hand.Add(current_card.data);
-                current_card.transform.SetParent(canvas.transform);
+                if (ai_deck.Count > 0)
+                {
+                    Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
+                    ai_offset.x += 300;
+                    current_card.data = GetRandomCardFromDeck(ai_deck);
+                    current_card.ai_card = true;
+                    ai_hand.Add(current_card.data);
+                    current_card.transform.SetParent(canvas.transform);
+                }
             }
+            
+            // Check if AI hand cumulative strength is greater than 8, reroll if needed
+            RerollAIHandIfTooStrong();
+            
+            Debug.Log("AI drew 2 new cards.");
         }
-        
-        Debug.Log("AI drew 2 new cards.");
     }
     
     public void NewHandButton()
