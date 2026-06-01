@@ -669,4 +669,64 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
+public void ShuffleAIHandButton()
+{
+    // Check if player has enough gold
+    if (playerGold < 3)
+    {
+        ShowEventNotification("Not enough gold! Need 3 gold");
+        Debug.Log("Not enough gold to replace AI hand! Need 3 gold.");
+        return;
+    }
+
+    // Destroy all current AI hand cards in the scene
+    Card[] allCards = FindObjectsByType<Card>();
+    foreach (Card card in allCards)
+    {
+        if (card.ai_card && ai_hand.Contains(card.data))
+        {
+            Destroy(card.gameObject);
+        }
+    }
+
+    // Clear the AI hand list
+    ai_hand.Clear();
+
+    // Reset AI offset for new card placement
+    ai_offset = Vector3.zero;
+
+    // Deal 2 new random cards to AI
+    for (int i = 0; i < 2; i++)
+    {
+        if (ai_deck.Count > 0)
+        {
+            Card current_card = Instantiate(blank, ai_hand_spawnpoint + ai_offset, Quaternion.identity, canvas.transform);
+            ai_offset.x += 300;
+            current_card.data = GetRandomCardFromDeck(ai_deck);
+            current_card.ai_card = true;
+            ai_hand.Add(current_card.data);
+            current_card.transform.SetParent(canvas.transform);
+        }
+    }
+
+    // Reroll if the new hand is too strong
+    RerollAIHandIfTooStrong();
+
+    // Deduct 3 gold
+    playerGold -= 3;
+    if (goldDisplay != null)
+    {
+        goldDisplay.text = $"Gold: {playerGold}";
+    }
+
+    ShowEventNotification("AI Hand Replaced! -3 Gold");
+    Debug.Log("AI hand has been replaced with new random cards!");
+
+    // Check if player is out of moves
+    if (!PlayerCanMakeAMove())
+    {
+        GameOver("AI WINS! Player out of gold!");
+    }
+}
 }

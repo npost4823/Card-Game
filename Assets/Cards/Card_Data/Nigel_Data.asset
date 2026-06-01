@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Nigel_Data
   m_EditorClassIdentifier: 
   card_name: Nigel
-  description: cutie
+  description: Made by Tor
   cost: 7
   damage: 6
   sprite: {fileID: 1657556599061244795, guid: 9638642ed170249f3be06a5a2d2172fd, type: 3}
