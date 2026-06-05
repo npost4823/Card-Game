@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c025b4487bfbb41fca186c7d9d6e18a5, type: 3}
   m_Name: Slime_Data
   m_EditorClassIdentifier: 
-  card_name: Nigel
-  description: Made by Tor
-  cost: 7
-  damage: 6
-  sprite: {fileID: 1657556599061244795, guid: 9638642ed170249f3be06a5a2d2172fd, type: 3}
+  card_name: Slime
+  description: Wobbles around
+  cost: 2
+  damage: 3
+  sprite: {fileID: 368543389579951487, guid: c395dd756a9c74abe8e39fae61a7802a, type: 3}

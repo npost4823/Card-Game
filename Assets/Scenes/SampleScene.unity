@@ -459,6 +459,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e282f1b9e4f5c427a9c186513c2a1694, type: 2}
   - {fileID: 11400000, guid: b6652c908b7584794ae896bd03c0b21e, type: 2}
   - {fileID: 11400000, guid: b6652c908b7584794ae896bd03c0b21e, type: 2}
+  - {fileID: 11400000, guid: 696bcbfa17eeb4a9493c828d2e00a6e7, type: 2}
+  - {fileID: 11400000, guid: 696bcbfa17eeb4a9493c828d2e00a6e7, type: 2}
+  - {fileID: 11400000, guid: 5521939e755d64d0081354f66e7ccd58, type: 2}
+  - {fileID: 11400000, guid: 5521939e755d64d0081354f66e7ccd58, type: 2}
   ai_deck:
   - {fileID: 11400000, guid: 33e2634b0f2e841eabb970bbf404ddca, type: 2}
   - {fileID: 11400000, guid: 33e2634b0f2e841eabb970bbf404ddca, type: 2}
@@ -472,6 +476,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b6652c908b7584794ae896bd03c0b21e, type: 2}
   - {fileID: 11400000, guid: 696bcbfa17eeb4a9493c828d2e00a6e7, type: 2}
   - {fileID: 11400000, guid: 696bcbfa17eeb4a9493c828d2e00a6e7, type: 2}
+  - {fileID: 11400000, guid: 5521939e755d64d0081354f66e7ccd58, type: 2}
+  - {fileID: 11400000, guid: 5521939e755d64d0081354f66e7ccd58, type: 2}
   player_hand: []
   ai_hand: []
   discard_pile: []
